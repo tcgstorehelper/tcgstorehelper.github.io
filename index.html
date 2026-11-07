@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TCG Store Helper: inventario de cartas en tu Google Sheet</title>
+    <meta name="description" content="Inventario, caja y reservas para tiendas chicas de Magic, Pokémon y Yu-Gi-Oh!, sobre tu propio Google Sheet.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="landing">
+<header class="topbar">
+    <a class="brand" href="#top"><span class="brand-mark">TCG</span> Store Helper</a>
+    <nav>
+        <a href="#video">Video</a>
+        <a href="#planes">Planes</a>
+        <a href="en/index.html" hreflang="en">English</a>
+    </nav>
+</header>
+
+<main id="top">
+    <section class="hero">
+        <div class="hero-copy">
+            <h1>Tu tienda de cartas, ordenada en tu propio Google Sheet</h1>
+            <p class="lead">Stock, precios, caja y reservas para tiendas chicas y coleccionistas de Magic, Pokémon y Yu-Gi-Oh!. Sin bases de datos ni sistemas complicados: tus datos quedan en tu Sheet.</p>
+            <div class="actions">
+                <a class="button" href="app/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5Zm7.7 9h-3.2a15.4 15.4 0 0 0-1.6-6.6 8.27 8.27 0 0 1 4.8 6.6Zm-7.7-7.4c.9 1 2.3 3.5 2.5 7.4h-5c.2-3.9 1.6-6.4 2.5-7.4Zm-2.9.8a15.4 15.4 0 0 0-1.6 6.6H4.3a8.27 8.27 0 0 1 4.8-6.6ZM4.3 12.75h3.2a15.4 15.4 0 0 0 1.6 6.6 8.27 8.27 0 0 1-4.8-6.6Zm7.7 7.4c-.9-1-2.3-3.5-2.5-7.4h5c-.2 3.9-1.6 6.4-2.5 7.4Zm2.9-.8a15.4 15.4 0 0 0 1.6-6.6h3.2a8.27 8.27 0 0 1-4.8 6.6Z"/></svg>Usar la versión web</a>
+                <a class="button-quiet" href="https://github.com/IvanBossio1994/MTG-Card-Store/releases/latest">o descargar para Windows</a>
+                <a class="button-quiet" href="#video">Ver cómo se configura</a>
+            </div>
+            <p class="small">Gratis hasta 300 ventas o compras por mes, con inventario sin límite. Funciona en el navegador de la compu o del celular, sin instalar nada.</p>
+        </div>
+        <figure class="hero-sheet" aria-hidden="true">
+            <img class="hero-cat" src="img/cat-box.png" alt="" width="260" height="173">
+            <div class="sheet">
+                <div class="sheet-bar"><span class="sheet-icon"></span>Inventario Mi Tienda</div>
+                <table>
+                    <thead><tr><th></th><th scope="col">A</th><th scope="col">B</th><th scope="col">C</th><th scope="col">D</th><th scope="col">E</th></tr></thead>
+                    <tbody>
+                    <tr class="sheet-head"><th scope="row">1</th><td>Carta</td><td>Juego</td><td>Edición</td><td>Stock</td><td>Precio</td></tr>
+                    <tr><th scope="row">2</th><td>Lightning Bolt</td><td><span class="game game-mtg">Magic</span></td><td>2X2</td><td class="num">4</td><td class="num">$ 2.500</td></tr>
+                    <tr><th scope="row">3</th><td>Charizard ex</td><td><span class="game game-pkm">Pokémon</span></td><td>OBF 125</td><td class="num">1</td><td class="num">$ 18.000</td></tr>
+                    <tr><th scope="row">4</th><td>Ash Blossom</td><td><span class="game game-ygo">Yu-Gi-Oh!</span></td><td>MAMA</td><td class="num">3</td><td class="num">$ 4.500</td></tr>
+                    <tr><th scope="row">5</th><td>Sol Ring</td><td><span class="game game-mtg">Magic</span></td><td>CMM</td><td class="num">6</td><td class="num">$ 1.500</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </figure>
+    </section>
+
+    <section class="video-band" id="video">
+        <div class="video-inner">
+            <h2>Configurala en un minuto</h2>
+            <p>Abrí la app, conectá tu cuenta de Google, creá tu Sheet y poné tu regla de precio.</p>
+            <video controls preload="metadata" playsinline poster="video/primera-configuracion-es.jpg">
+                <source src="video/primera-configuracion-es.mp4" type="video/mp4">
+                <a href="video/primera-configuracion-es.mp4">Descargar el video</a>
+            </video>
+        </div>
+    </section>
+
+    <section class="section">
+        <h2>Lo que hacés todos los días, en un solo lugar</h2>
+        <ul class="feats">
+            <li class="feat feat-mtg"><h3>Stock al día</h3><p>Buscá una carta, sumá o restá unidades y queda registrado en tu Sheet.</p></li>
+            <li class="feat feat-pkm"><h3>Precios con tu regla</h3><p>Card Kingdom, TCGplayer o Cardmarket, con tu cotización, recargo y redondeo.</p></li>
+            <li class="feat feat-ygo"><h3>Caja clara</h3><p>Cada venta y cada anulación quedan anotadas, con totales del día y del mes.</p></li>
+            <li class="feat feat-ink"><h3>Reservas y pedidos</h3><p>Apartá cartas para un cliente. Si no las retira a tiempo, vuelven solas al stock.</p></li>
+        </ul>
+    </section>
+
+    <section class="section how">
+        <div>
+            <h2>Cómo funciona</h2>
+            <ol class="steps">
+            <li><h3>Descargá y abrí la app</h3><p>Corre en tu computadora. Se abre en tu navegador, sin instalar nada.</p></li>
+            <li><h3>Entrá con Google</h3><p>La app crea tu Sheet de inventario en tu Drive. Solo ve tu mail y los archivos que crea ella, nunca el resto de tu Drive.</p></li>
+            <li><h3>Cargá y vendé</h3><p>Sincronizá al abrir, buscá cartas, usá + y − y revisá la caja al final del día.</p></li>
+            </ol>
+        </div>
+        <img class="how-cat" src="img/cat-teacher.png" alt="Gatito con una caja de cartas" width="260" height="390" loading="lazy">
+    </section>
+
+    <section class="section" id="planes">
+        <h2>Planes</h2>
+        <div class="plans">
+            <div class="plan"><h3>Gratis</h3><p>Hasta 300 ventas o compras por mes, inventario sin límite y todas las funciones.</p></div>
+            <div class="plan plan-store"><h3>Tienda</h3><p>Ventas y compras sin límite, para cuando tu tienda crece. 10 USD por mes u 80 USD por año.</p></div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <h2>Probala con tu propio stock</h2>
+        <p>Empezá gratis. Tus cartas siguen siendo tuyas, en tu Sheet.</p>
+        <a class="button" href="app/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5Zm7.7 9h-3.2a15.4 15.4 0 0 0-1.6-6.6 8.27 8.27 0 0 1 4.8 6.6Zm-7.7-7.4c.9 1 2.3 3.5 2.5 7.4h-5c.2-3.9 1.6-6.4 2.5-7.4Zm-2.9.8a15.4 15.4 0 0 0-1.6 6.6H4.3a8.27 8.27 0 0 1 4.8-6.6ZM4.3 12.75h3.2a15.4 15.4 0 0 0 1.6 6.6 8.27 8.27 0 0 1-4.8-6.6Zm7.7 7.4c-.9-1-2.3-3.5-2.5-7.4h5c-.2 3.9-1.6 6.4-2.5 7.4Zm2.9-.8a15.4 15.4 0 0 0 1.6-6.6h3.2a8.27 8.27 0 0 1-4.8 6.6Z"/></svg>Usar la versión web</a>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <p><a href="privacidad.html">Política de privacidad</a>
+        <a href="terminos.html">Términos de uso</a>
+        <span>Contacto: <a href="mailto:tcgstorehelper@gmail.com">tcgstorehelper@gmail.com</a></span></p>
+</footer>
+</body>
+</html>

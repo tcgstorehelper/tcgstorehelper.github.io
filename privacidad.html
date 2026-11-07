@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Política de privacidad</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+    <header>
+        <p class="eyebrow"><a href="index.html">TCG Store Helper</a></p>
+        <h1>Política de privacidad</h1>
+        <p class="lead">Última actualización: 5 de noviembre de 2026</p>
+    </header>
+
+    <h2>Resumen</h2>
+    <p>TCG Store Helper es una aplicación que se ejecuta en tu propia computadora. No tenemos servidores que guarden
+        tu inventario, tus ventas ni tus clientes: todo eso queda en tu Google Sheet y en tu computadora.</p>
+
+    <h2>Qué datos de Google usamos</h2>
+    <p>Si elegís conectar tu cuenta de Google, la app pide solamente estos permisos:</p>
+    <ul>
+        <li><code>openid</code> y <code>email</code>: para mostrar con qué cuenta estás conectado.</li>
+        <li><code>drive.file</code>: para crear tu Sheet de inventario y leer y escribir en él. Este permiso solo da
+            acceso a los archivos que crea o abre la propia app, no al resto de tu Google Drive.</li>
+    </ul>
+    <p>La app usa esos datos solo para funcionar en tu computadora: mostrar tu cuenta y mantener tu inventario, caja y
+        reservas en tu Sheet. No los vendemos, no los compartimos con terceros, no los usamos para publicidad y no los
+        usamos para entrenar modelos de inteligencia artificial.</p>
+    <p>El uso y la transferencia de la información recibida de las APIs de Google cumplen con la
+        <a href="https://developers.google.com/terms/api-services-user-data-policy">Política de datos de usuario de los
+            servicios de API de Google</a>, incluidos los requisitos de Uso Limitado.</p>
+
+    <h2>Dónde se guardan</h2>
+    <ul>
+        <li>Tu inventario, movimientos, caja y reservas: en tu Google Sheet, en tu cuenta.</li>
+        <li>El permiso de acceso de Google (token) y tu configuración: en la carpeta <code>data</code> de la app,
+            en tu computadora.</li>
+    </ul>
+
+    <h2>Servicios externos</h2>
+    <p>Para mostrar precios, la app consulta listas públicas de precios de cartas (Card Kingdom y Scryfall para Magic; TCGdex y pokemontcg.io para Pokémon; YGOPRODeck para Yu-Gi-Oh!). En esas
+        consultas solo se envían datos de las cartas (nombre, edición y número), nunca datos tuyos ni de tus clientes.</p>
+    <p>Si activás el plan Tienda, la clave de licencia se valida con nuestro procesador de pagos (Lemon Squeezy).
+        Ellos manejan el cobro y el mail de la compra según su propia política de privacidad.</p>
+
+    <h2>Cómo borrar tus datos o quitar el acceso</h2>
+    <ul>
+        <li>En la app: Configuración, Cuenta de Google, Desconectar. Eso revoca el permiso y borra el token local.</li>
+        <li>Desde Google: <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.</li>
+        <li>Tu Sheet es tuyo: lo podés borrar o conservar desde tu Google Drive.</li>
+    </ul>
+
+    <h2>Contacto</h2>
+    <p>Por dudas sobre privacidad escribinos a <a href="mailto:tcgstorehelper@gmail.com">tcgstorehelper@gmail.com</a>.</p>
+
+    <footer><p><a href="index.html">Inicio</a> · <a href="terminos.html">Términos de uso</a></p></footer>
+</main>
+</body>
+</html>
