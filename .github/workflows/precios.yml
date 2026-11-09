@@ -1,23 +1,32 @@
-name: Precios de Card Kingdom (cada 1 h 05 min)
+name: Precios (Card Kingdom cada 1 h 05 min e historial de Magic una vez por día)
 
-# Mantiene al día app/data/ck-prices.json, la lista que lee la web.
+# Publica los datos que lee la web en la rama "datos" de este repo (no en main):
+#   ck-prices.json, ck-prices-info.json   lista de Card Kingdom (.github/scripts/ck-prices.mjs, cada 65 minutos)
+#   historial/mtg/<set>.json, historial/mtg-info.json   historial de precios de mercado de Magic (MTGJSON, una vez por día,
+#                                                         .github/scripts/mtg-history.py)
+# La web los baja de https://raw.githubusercontent.com/tcgstorehelper/tcgstorehelper.github.io/datos/...
 #
-# Por qué acá y no solo en el repo privado: GitHub no respeta el horario "cada hora" (en el repo privado
-# corría cada 4 a 7 horas, y la web mostraba el aviso rojo de lista vieja). Este repo es público, así que los
-# minutos de Actions son gratis y el trabajo puede quedarse prendido: baja la lista, espera 65 minutos, la vuelve
-# a bajar... y antes de llegar al límite de 6 horas de GitHub se relanza solo. El horario de abajo es solo un
-# respaldo para volver a arrancar la cadena si alguna vez se corta. Si dos corridas se pisan, "concurrency"
-# deja una sola en espera.
+# Por qué una rama aparte: la rama "datos" siempre tiene UN solo commit que se pisa (push --force). Así git no guarda
+# copias viejas de la lista de 13 MB y el repo no crece aunque se publique cada hora. Tampoco se rearma GitHub Pages
+# cada hora. Este workflow es el ÚNICO que escribe en "datos" (concurrency de abajo): si otro escribe ahí, se pisan.
 #
-# El script es una copia de scripts/ck-prices.mjs del repo privado (.github/scripts/ck-prices.mjs).
+# Por qué un trabajo que queda prendido: GitHub no respeta el horario "cada hora" (corría cada 4 a 7 horas). Este repo
+# es público, así que los minutos de Actions son gratis: baja la lista, espera 65 minutos, la vuelve a bajar... y antes
+# del límite de 6 horas de GitHub se relanza solo. El horario de abajo es solo un respaldo para volver a arrancar la
+# cadena si alguna vez se corta.
 
 on:
   schedule:
     - cron: '41 */2 * * *'
   workflow_dispatch:
+    inputs:
+      vueltas:
+        description: 'Cuántas veces baja la lista antes de relanzarse (cada 65 min)'
+        required: false
+        default: '4'
 
 concurrency:
-  group: precios-ck-sitio
+  group: precios-datos
   cancel-in-progress: false
 
 permissions:
@@ -27,7 +36,7 @@ permissions:
 jobs:
   precios:
     runs-on: ubuntu-latest
-    timeout-minutes: 340
+    timeout-minutes: 345
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,30 +44,76 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Bajar y publicar la lista cada 65 minutos
+      - name: Preparar el historial (ijson lee los archivos grandes de a pedazos)
+        run: pip install --quiet ijson
+      - name: Bajar y publicar cada 65 minutos
+        env:
+          VUELTAS: ${{ github.event.inputs.vueltas || '4' }}
         run: |
-          set -uo pipefail
+          set +e -uo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          actualizar() {
-            node .github/scripts/ck-prices.mjs "$RUNNER_TEMP/ck-prices.json" || { echo "::warning::No se pudo bajar la lista de Card Kingdom; se reintenta en la próxima vuelta."; return 0; }
-            git pull --rebase -q origin main || true
-            cp "$RUNNER_TEMP/ck-prices.json" "$RUNNER_TEMP/ck-prices-info.json" app/data/
-            git add app/data/ck-prices.json app/data/ck-prices-info.json
-            if git diff --cached --quiet; then echo "Sin cambios de precios."; return 0; fi
-            git commit -q -m "Precios de Card Kingdom $(date -u '+%F %H:%M') UTC"
-            for i in 1 2 3; do
-              git push -q origin HEAD:main && return 0
-              sleep 10
-              git pull --rebase -q origin main
-            done
-            echo "::warning::No se pudo subir la lista; se reintenta en la próxima vuelta."
+          DATOS="$RUNNER_TEMP/datos"
+
+          # Trae lo que hay hoy en la rama datos a la carpeta $DATOS. Si no se pudo leer (y no es que todavía no existe),
+          # falla: publicar una carpeta vacía borraría el historial.
+          traer() {
+            rm -rf "$DATOS" && mkdir -p "$DATOS"
+            git ls-remote --exit-code -q origin refs/heads/datos >/dev/null; local hay=$?
+            [ "$hay" = 2 ] && { echo "Todavía no hay rama datos: se crea."; git update-ref -d FETCH_HEAD 2>/dev/null; return 0; }
+            [ "$hay" = 0 ] && git fetch -q --depth 1 origin datos && git archive FETCH_HEAD | tar -x -C "$DATOS"
           }
-          # 5 vueltas: 0 h, 1:05, 2:10, 3:15, 4:20. La siguiente corrida arranca a las ~5:25.
-          for vuelta in 1 2 3 4 5; do
+
+          # Una vez por día: historial de Magic de MTGJSON (últimos 90 días; se suma a lo que ya había).
+          historial() {
+            local hoy; hoy=$(date -u +%F)
+            local info="$DATOS/historial/mtg-info.json"
+            if grep -q "\"updated\": *\"$hoy\"" "$info" 2>/dev/null && grep -q '"files"' "$info"; then return 0; fi
+            local tmp="$RUNNER_TEMP/mtgjson"; mkdir -p "$tmp"
+            for f in AllPrices AllIdentifiers; do
+              curl -fsSL --retry 3 -o "$tmp/$f.json.xz" "https://mtgjson.com/api/v5/$f.json.xz" \
+                || { echo "::warning::No se pudo bajar $f de MTGJSON; se reintenta en la próxima vuelta."; return 0; }
+            done
+            mkdir -p "$DATOS/historial"
+            ls -la "$tmp"
+            python3 .github/scripts/mtg-history.py "$tmp/AllPrices.json.xz" "$tmp/AllIdentifiers.json.xz" "$DATOS/historial" \
+              || echo "::warning::No se pudo armar el historial de Magic; queda el anterior."
+            rm -rf "$tmp"
+          }
+
+          # Publica $DATOS como el único commit de la rama datos.
+          publicar() {
+            local index="$RUNNER_TEMP/index-datos"
+            rm -f "$index"
+            local repo; repo=$(git rev-parse --absolute-git-dir)
+            local arbol; arbol=$(cd "$DATOS" && GIT_INDEX_FILE="$index" git --git-dir="$repo" --work-tree=. add -A . \
+              && GIT_INDEX_FILE="$index" git --git-dir="$repo" write-tree)
+            if [ "$(git rev-parse -q --verify 'FETCH_HEAD^{tree}' 2>/dev/null)" = "$arbol" ]; then echo "Sin cambios."; return 0; fi
+            local commit; commit=$(git commit-tree "$arbol" -m "Datos de precios $(date -u '+%F %H:%M') UTC")
+            for i in 1 2 3; do
+              git push -q --force origin "$commit:refs/heads/datos" && return 0
+              sleep 10
+            done
+            echo "::warning::No se pudo subir la rama datos; se reintenta en la próxima vuelta."
+          }
+
+          actualizar() {
+            traer || { echo "::warning::No se pudo leer la rama datos; se reintenta en la próxima vuelta."; return 0; }
+            if node .github/scripts/ck-prices.mjs "$RUNNER_TEMP/ck-prices.json"; then
+              cp "$RUNNER_TEMP/ck-prices.json" "$RUNNER_TEMP/ck-prices-info.json" "$DATOS/"
+            else
+              echo "::warning::No se pudo bajar la lista de Card Kingdom; se reintenta en la próxima vuelta."
+            fi
+            historial
+            publicar
+          }
+
+          # 4 vueltas: 0 h, 1:05, 2:10, 3:15 (+ el historial una vez por día). La siguiente corrida arranca a las ~4:20.
+          for vuelta in $(seq 1 "$VUELTAS"); do
             actualizar
-            sleep 3900
+            [ "$vuelta" -lt "$VUELTAS" ] && sleep 3900
           done
+          sleep 3900
       - name: Relanzarse para seguir la cadena
         if: always() && github.ref == 'refs/heads/main'
         env:
