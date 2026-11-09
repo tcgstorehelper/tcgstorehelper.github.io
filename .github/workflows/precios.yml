@@ -1,9 +1,12 @@
-name: Precios (Card Kingdom cada 1 h 05 min e historial de Magic una vez por día)
+name: Precios (Card Kingdom cada 1 h 05 min e historial de mercado una vez por día)
 
 # Publica los datos que lee la web en la rama "datos" de este repo (no en main):
 #   ck-prices.json, ck-prices-info.json   lista de Card Kingdom (.github/scripts/ck-prices.mjs, cada 65 minutos)
 #   historial/mtg/<set>.json, historial/mtg-info.json   historial de precios de mercado de Magic (MTGJSON, una vez por día,
 #                                                         .github/scripts/mtg-history.py)
+#   historial/pokemon/, historial/yugioh/, historial/<juego>-info.json   historial de Pokémon y Yu-Gi-Oh! (precio de
+#                                                         mercado de TCGplayer copiado por TCGCSV, una vez por día,
+#                                                         .github/scripts/games-history.py)
 # La web los baja de https://raw.githubusercontent.com/tcgstorehelper/tcgstorehelper.github.io/datos/...
 #
 # Por qué una rama aparte: la rama "datos" siempre tiene UN solo commit que se pisa (push --force). Así git no guarda
@@ -81,6 +84,15 @@ jobs:
             rm -rf "$tmp"
           }
 
+          # Pokémon y Yu-Gi-Oh!: TCGCSV publica un archivo por día (~20 h UTC). El script mira solo si hay días nuevos y,
+          # la primera vez, arma el historial hacia atrás (~10 minutos).
+          juegos() {
+            mkdir -p "$DATOS/historial"
+            python3 -u .github/scripts/games-history.py "$DATOS/historial" "$RUNNER_TEMP/tcgcsv" \
+              || echo "::warning::No se pudo armar el historial de Pokémon y Yu-Gi-Oh!; queda el anterior."
+            rm -rf "$RUNNER_TEMP/tcgcsv"
+          }
+
           # Publica $DATOS como el único commit de la rama datos.
           publicar() {
             local index="$RUNNER_TEMP/index-datos"
@@ -105,6 +117,7 @@ jobs:
               echo "::warning::No se pudo bajar la lista de Card Kingdom; se reintenta en la próxima vuelta."
             fi
             historial
+            juegos
             publicar
           }
 
