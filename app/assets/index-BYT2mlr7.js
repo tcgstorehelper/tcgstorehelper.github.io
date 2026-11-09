@@ -797,7 +797,7 @@
       </div>
     </div>
     <p class="supporting">${v(`web.prices.source`)}</p>
-    <div class="table-wrap" tabindex="0"><table class="price-history-table market-history-table">
+    <div class="table-wrap market-scroll" tabindex="0"><table class="price-history-table market-history-table">
       <thead><tr><th>${v(`common.date`)}</th><th>Card Kingdom</th><th>TCGplayer</th></tr></thead>
       <tbody>${s.map(e=>h`<tr><td>${pl(e.date)}</td><td>${i(e.ck)}</td><td>${i(e.tcg)}</td></tr>`)}</tbody>
     </table></div>`:h`<p class="supporting">${v(`web.prices.noMarket`)}</p>`}
