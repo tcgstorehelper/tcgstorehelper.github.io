@@ -4,4 +4,4 @@ Sitio público de TCG Store Helper: https://tcgstorehelper.github.io/
 
 - `/` inicio (castellano), `/en/` inglés, privacidad y términos.
 - `/app/` la web, compilada. No se edita a mano: la publica el workflow "Publicar web" del repo privado.
-- `/app/data/` lista de precios de Card Kingdom: la actualiza cada 1 h 05 min el workflow `.github/workflows/precios.yml` de este repo (el del repo privado también la publica a veces).
+- Rama `datos`: lista de precios de Card Kingdom (cada 1 h 05 min) e historial de precios de mercado de Magic (`historial/`, una vez por día, de MTGJSON). La escribe solo el workflow `.github/workflows/precios.yml`, siempre como un único commit que se pisa, así el repo no crece. La web la lee de `https://raw.githubusercontent.com/tcgstorehelper/tcgstorehelper.github.io/datos/`.
