@@ -26,7 +26,7 @@ on:
         default: '4'
 
 concurrency:
-  group: precios-ck-sitio
+  group: precios-datos
   cancel-in-progress: false
 
 permissions:
