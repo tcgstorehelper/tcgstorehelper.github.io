@@ -1,5 +1,7 @@
 name: explorar
-on: workflow_dispatch
+on:
+  push:
+    branches: [claude/project-thread-9d04p5]
 jobs:
   x:
     runs-on: ubuntu-latest
