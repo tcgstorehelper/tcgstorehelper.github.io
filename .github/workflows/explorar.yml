@@ -1,0 +1,25 @@
+name: explorar
+on: workflow_dispatch
+jobs:
+  x:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          set -x
+          curl -sS https://api.tcgdex.net/v2/en/cards/sv03-063 | head -c 3000; echo
+          curl -sS https://api.tcgdex.net/v2/en/sets/sv03 | head -c 800; echo
+          curl -sS https://tcgcsv.com/tcgplayer/3/groups | head -c 1500; echo
+          curl -sS https://tcgcsv.com/tcgplayer/3/groups | python3 -c "import json,sys;d=json.load(sys.stdin)['results'];print(len(d));[print(g['groupId'],g.get('abbreviation'),g['name']) for g in d if 'Obsidian' in g['name'] or 'Base Set'==g['name']]"
+          G=$(curl -sS https://tcgcsv.com/tcgplayer/3/groups | python3 -c "import json,sys;print([g['groupId'] for g in json.load(sys.stdin)['results'] if 'Obsidian Flames' in g['name']][0])")
+          curl -sS https://tcgcsv.com/tcgplayer/3/$G/products | python3 -c "import json,sys;d=json.load(sys.stdin)['results'];print(len(d));[print(json.dumps(p)[:700]) for p in d if 'Pikachu' in p['name']]"
+          curl -sS https://tcgcsv.com/tcgplayer/3/$G/prices | head -c 800; echo
+          curl -sS https://tcgcsv.com/tcgplayer/2/groups | python3 -c "import json,sys;d=json.load(sys.stdin)['results'];print(len(d));[print(g['groupId'],g.get('abbreviation'),g['name']) for g in d if 'Legend of Blue' in g['name']]"
+          Y=$(curl -sS https://tcgcsv.com/tcgplayer/2/groups | python3 -c "import json,sys;print([g['groupId'] for g in json.load(sys.stdin)['results'] if g['name'].startswith('Legend of Blue Eyes')][0])")
+          curl -sS https://tcgcsv.com/tcgplayer/2/$Y/products | python3 -c "import json,sys;d=json.load(sys.stdin)['results'];print(len(d));[print(json.dumps(p)[:700]) for p in d if 'Dark Magician' == p['name']]"
+          curl -sS https://tcgcsv.com/tcgplayer/2/$Y/prices | head -c 800; echo
+          curl -sSI https://tcgcsv.com/archive/tcgplayer/prices-2026-11-01.ppmd.7z | head -20
+          curl -sSI https://tcgcsv.com/archive/tcgplayer/prices-2024-02-08.ppmd.7z | head -20
+          curl -sS -o a.7z https://tcgcsv.com/archive/tcgplayer/prices-2026-11-01.ppmd.7z && ls -la a.7z && 7z l a.7z | head -20 && 7z l a.7z | grep -E " 2026-11-01/(2|3)/" | wc -l && 7z l a.7z | tail -3
+          curl -sS "https://db.ygoprodeck.com/api/v7/cardinfo.php" -o ygo.json; ls -la ygo.json
+          curl -sS "https://api.tcgdex.net/v2/en/cards" | head -c 300; echo
+          curl -sSI https://tcgcsv.com/last-updated.txt; curl -sS https://tcgcsv.com/last-updated.txt
