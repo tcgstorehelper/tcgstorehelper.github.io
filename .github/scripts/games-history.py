@@ -15,8 +15,9 @@ producto (nombre, número, rareza) sale de tcgcsv.com/tcgplayer/<categoría>/<ed
       <código> = lo de antes del guion del número ("LOB-EN005" -> "lob"). Una misma carta puede estar en varias
       ediciones (reimpresiones con el mismo número): por eso va una entrada por edición.
   <salida>/<juego>-info.json       {"updated","through":"último día leído","files":[...],"codes":{"sv03":"obsidianflames"}}
+  <salida>/tcgcsv-products.json    qué carta es cada producto, por edición (para no pedir las 880 ediciones cada día)
 
-Cada serie guarda solo los días en que el precio cambió. La primera vez se arma el historial hacia atrás (un día por
+Cada serie guarda solo los días en que el precio cambió (3 % o más). La primera vez se arma el historial hacia atrás (un día por
 semana hasta hace 90 días y todos los días después); de a MAX_DAYS_PER_RUN días por corrida para no tardar horas. Las
 corridas siguientes suman solo los días nuevos. Se guardan hasta 2 años.
 
@@ -31,6 +32,7 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 
 API = 'https://tcgcsv.com'
@@ -40,14 +42,30 @@ DAILY_DAYS = 90
 MAX_DAYS_PER_RUN = int(os.environ.get('MAX_DAYS_PER_RUN', '60'))
 GAMES = {'pokemon': 3, 'yugioh': 2}
 USER_AGENT = 'tcgstorehelper-price-history/1.0 (+https://tcgstorehelper.github.io)'
+PAUSE = 0.25
+# Un cambio chico (centavos de ida y vuelta) no se anota: con 3 % alcanza para ver cómo se movió y los archivos pesan
+# la mitad.
+MIN_CHANGE = 0.03
 
 
-def get(url, retries=3):
+class NotFound(Exception):
+    pass
+
+
+def get(url, retries=4):
+    """Con pausa entre pedidos (TCGCSV corta con 429 si se le pide muy rápido) y esperas largas si igual corta."""
     for attempt in range(retries):
+        time.sleep(PAUSE)
         try:
             req = urllib.request.Request(url, headers={'User-Agent': USER_AGENT})
             with urllib.request.urlopen(req, timeout=60) as r:
                 return r.read()
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                raise NotFound(url) from e
+            if attempt == retries - 1:
+                raise
+            time.sleep(60 * (attempt + 1) if e.code == 429 else 2 ** attempt)
         except Exception:
             if attempt == retries - 1:
                 raise
@@ -83,41 +101,57 @@ def extended(product, field):
     return ''
 
 
-def read_products(game, category):
-    """productId -> (archivo, clave, edición, nombre). También los códigos que llevan a cada archivo de Pokémon."""
+def read_products(game, category, cache):
+    """productId -> (archivo, clave, edición, nombre). También los códigos que llevan a cada archivo de Pokémon.
+
+    `cache` ({groupId: {"modified", "name", "abbreviation", "products": {productId: [número, rareza, nombre]}}}) se
+    guarda entre corridas: solo se vuelven a pedir las ediciones que TCGplayer cambió.
+    """
     groups = get_json(f'{API}/tcgplayer/{category}/groups')['results']
-    products, codes = {}, {}
+    fresh = {}
+    asked = 0
     for g in groups:
+        gid = str(g['groupId'])
+        saved = cache.get(gid)
+        if saved and saved.get('modified') == g.get('modifiedOn'):
+            fresh[gid] = saved
+            continue
         try:
-            items = get_json(f"{API}/tcgplayer/{category}/{g['groupId']}/products")['results']
+            items = get_json(f"{API}/tcgplayer/{category}/{gid}/products")['results']
+            asked += 1
         except Exception as e:
             print(f"::warning::No se pudieron leer los productos de {g['name']}: {e}")
+            if saved:
+                fresh[gid] = saved
             continue
+        fresh[gid] = {'modified': g.get('modifiedOn'), 'name': g['name'], 'abbreviation': g.get('abbreviation') or '',
+                      'products': {str(p['productId']): [extended(p, 'Number'), extended(p, 'Rarity'), p.get('name') or '']
+                                   for p in items if extended(p, 'Number')}}
+    products, codes = {}, {}
+    for g in fresh.values():
         gslug = slug(g['name'])
         if not gslug:
             continue
         if game == 'pokemon':
             prefix = re.match(r'^([A-Za-z0-9.\-]+):\s+', g['name'])
-            for code in {(prefix.group(1) if prefix else ''), g.get('abbreviation') or ''}:
+            for code in {(prefix.group(1) if prefix else ''), g['abbreviation']}:
                 c = code.strip().lower()
                 if c:
                     codes.setdefault(c, set()).add(gslug)
-        for p in sorted(items, key=lambda p: p['productId']):
-            number = extended(p, 'Number')
-            if not number:
-                continue  # sobres, cajas, etc.
+        for pid, (number, rarity, name) in sorted(g['products'].items(), key=lambda kv: int(kv[0])):
+            pid = int(pid)
             if game == 'pokemon':
-                products[p['productId']] = (gslug, number_key(number), g['name'], p.get('name') or '')
+                products.setdefault(pid, (gslug, number_key(number), g['name'], name))
             else:
                 code, _, rest = number.partition('-')
-                rarity = re.sub(r'[^a-z0-9]', '', extended(p, 'Rarity').lower())
-                if not rest:
-                    continue
-                key = f'{rest.strip().lower()}|{rarity}'
-                products[p['productId']] = (safe_name(code), key, gslug, p.get('name') or '')
+                if rest:
+                    key = f"{rest.strip().lower()}|{re.sub(r'[^a-z0-9]', '', rarity.lower())}"
+                    products.setdefault(pid, (safe_name(code), key, gslug, name))
+    cache.clear()
+    cache.update(fresh)
     # Un código que lleva a dos ediciones distintas no sirve para encontrar la carta.
     unique = {c: next(iter(s)) for c, s in codes.items() if len(s) == 1}
-    print(f'{game}: {len(groups)} ediciones, {len(products)} cartas.')
+    print(f'{game}: {len(groups)} ediciones ({asked} pedidas de nuevo), {len(products)} cartas.')
     return products, unique
 
 
@@ -135,16 +169,17 @@ def schedule(through, latest):
 
 
 def read_archive(day, tmp):
-    """{categoría: {productId: {terminación: precio}}} de un día; None si ese día no está."""
+    """{categoría: {productId: {terminación: precio}}} de un día ({} si TCGCSV no lo tiene). Falla si no se pudo bajar."""
     path = os.path.join(tmp, 'a.7z')
     out = os.path.join(tmp, 'x')
     shutil.rmtree(out, ignore_errors=True)
     try:
-        with open(path, 'wb') as f:
-            f.write(get(f'{API}/archive/tcgplayer/prices-{day.isoformat()}.ppmd.7z'))
-    except Exception as e:
-        print(f'::warning::No se pudo bajar el archivo del {day}: {e}')
-        return None
+        body = get(f'{API}/archive/tcgplayer/prices-{day.isoformat()}.ppmd.7z')
+    except NotFound:
+        print(f'  {day}: TCGCSV no tiene ese día.')
+        return {}
+    with open(path, 'wb') as f:
+        f.write(body)
     subprocess.run(['7z', 'x', '-y', f'-o{out}', path], check=True, stdout=subprocess.DEVNULL)
     prices = {}
     for category in GAMES.values():
@@ -188,10 +223,11 @@ def entry_for(files, game, info):
 
 
 def add_point(series, day, price):
-    if not series or series[-1][1] != price:
-        if series and series[-1][0] >= day:
+    if series:
+        last_day, last = series[-1]
+        if last_day >= day or abs(price - last) < max(0.01, last * MIN_CHANGE):
             return
-        series.append([day, price])
+    series.append([day, price])
 
 
 def trim(series, cutoff):
@@ -225,14 +261,23 @@ def main():
         print(f'Pokémon y Yu-Gi-Oh!: ya está al día ({latest}).')
         return
     print(f'Pokémon y Yu-Gi-Oh!: leo {len(days)} días, del {days[0]} al {days[-1]}.')
-    catalogs = {game: read_products(game, cat) for game, cat in GAMES.items()}
+    cache_path = os.path.join(out, 'tcgcsv-products.json')
+    try:
+        with open(cache_path, encoding='utf-8') as f:
+            cache = json.load(f)
+    except (OSError, ValueError):
+        cache = {}
+    catalogs = {game: read_products(game, cat, cache.setdefault(game, {})) for game, cat in GAMES.items()}
     folders = {game: os.path.join(out, game) for game in GAMES}
     files = {game: load(folders[game]) for game in GAMES}
     done = None
     for day in days:
-        prices = read_archive(day, tmp)
-        if prices is None:
-            continue
+        try:
+            prices = read_archive(day, tmp)
+        except Exception as e:
+            # Se corta acá (no se saltea el día): la próxima corrida sigue desde este.
+            print(f'::warning::No se pudo bajar el archivo del {day}: {e}. Sigo en la próxima corrida.')
+            break
         iso = day.isoformat()
         for game, cat in GAMES.items():
             products = catalogs[game][0]
@@ -268,6 +313,8 @@ def main():
         with open(os.path.join(out, f'{game}-info.json'), 'w', encoding='utf-8') as f:
             json.dump(info, f, separators=(',', ':'), ensure_ascii=False)
         print(f'Historial de {game}: {len(files[game])} archivos, {total} cartas, hasta el {done}.')
+    with open(cache_path, 'w', encoding='utf-8') as f:
+        json.dump(cache, f, separators=(',', ':'), ensure_ascii=False)
 
 
 if __name__ == '__main__':
