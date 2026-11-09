@@ -50,7 +50,7 @@ jobs:
         env:
           VUELTAS: ${{ github.event.inputs.vueltas || '4' }}
         run: |
-          set -uo pipefail
+          set +e -uo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           DATOS="$RUNNER_TEMP/datos"
@@ -74,7 +74,8 @@ jobs:
                 || { echo "::warning::No se pudo bajar $f de MTGJSON; se reintenta en la próxima vuelta."; return 0; }
             done
             mkdir -p "$DATOS/historial"
-            python3 -I .github/scripts/mtg-history.py "$tmp/AllPrices.json.xz" "$tmp/AllIdentifiers.json.xz" "$DATOS/historial" \
+            ls -la "$tmp"
+            python3 .github/scripts/mtg-history.py "$tmp/AllPrices.json.xz" "$tmp/AllIdentifiers.json.xz" "$DATOS/historial" \
               || echo "::warning::No se pudo armar el historial de Magic; queda el anterior."
             rm -rf "$tmp"
           }
