@@ -45,6 +45,15 @@ export function shrink(list, now = new Date()) {
 /** Lo que la web baja al abrir Inventario para mostrar de cuándo es la lista, sin bajar la lista entera. */
 export const infoOf = (small) => ({ updated: small.updated, products: small.data.length });
 
+/**
+ * Igual que JSON.stringify(small), pero con un producto por línea. El archivo sigue siendo JSON válido (la web lo
+ * lee igual), y como se guarda en git cada hora, así git guarda solo las líneas que cambiaron y no 13 MB por vez.
+ */
+export const toJson = (small) =>
+  `{"version":${JSON.stringify(small.version)},"updated":${JSON.stringify(small.updated)},"fields":${JSON.stringify(small.fields)},"data":[\n` +
+  small.data.map((row) => JSON.stringify(row)).join(',\n') +
+  '\n]}\n';
+
 /** ck-prices.json -> ck-prices-info.json, en la misma carpeta. */
 export const infoPath = (output) => output.replace(/(\.json)?$/, '-info.json');
 
@@ -62,7 +71,7 @@ async function main() {
   }
   const list = input ? JSON.parse(readFileSync(input, 'utf8')) : await download();
   const small = shrink(list);
-  const json = JSON.stringify(small);
+  const json = toJson(small);
   writeFileSync(output, json);
   writeFileSync(infoPath(output), JSON.stringify(infoOf(small)));
   console.log(`Card Kingdom: ${small.data.length} productos, ${(json.length / 1e6).toFixed(1)} MB.`);
