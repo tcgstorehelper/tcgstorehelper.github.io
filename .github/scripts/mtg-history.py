@@ -7,7 +7,8 @@ TCGplayer de cada impresión, y AllIdentifiers dice a qué edición y número co
 
   <salida>/mtg/<set>.json  {"version":1,"set":"cmm","updated":"2026-11-09","cards":{"410":{"name":"Sol Ring",
                              "ck":[["2026-08-11",2.49],["2026-09-02",2.79]],"ckf":[...],"tcg":[...],"tcgf":[...]}}}
-  <salida>/mtg-info.json   {"updated":"2026-11-09","sets":812,"cards":98000}
+  <salida>/mtg-info.json   {"updated":"2026-11-09","sets":812,"cards":98000,"files":["10e","2ed",...]}
+                           (la web pide solo las ediciones de "files": así no hay pedidos que den 404)
 
 Cada serie guarda solo los días en que el precio cambió ([fecha, precio]). Si ya había un archivo de la edición, se
 conserva lo anterior a lo que trae MTGJSON, así el historial crece más allá de 90 días (hasta MAX_DAYS).
@@ -147,7 +148,8 @@ def main():
             json.dump({'version': 1, 'set': code, 'updated': today, 'cards': merged}, f, separators=(',', ':'),
                       ensure_ascii=False)
     with open(os.path.join(out, 'mtg-info.json'), 'w', encoding='utf-8') as f:
-        json.dump({'updated': today, 'sets': len(sets), 'cards': total}, f)
+        files = sorted(n[:-5] for n in os.listdir(folder) if n.endswith('.json'))
+        json.dump({'updated': today, 'sets': len(files), 'cards': total, 'files': files}, f, separators=(',', ':'))
     print(f'Historial de Magic: {len(sets)} ediciones, {total} cartas.')
 
 

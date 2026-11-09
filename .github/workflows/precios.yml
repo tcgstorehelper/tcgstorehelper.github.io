@@ -67,7 +67,8 @@ jobs:
           # Una vez por día: historial de Magic de MTGJSON (últimos 90 días; se suma a lo que ya había).
           historial() {
             local hoy; hoy=$(date -u +%F)
-            if grep -q "\"updated\": *\"$hoy\"" "$DATOS/historial/mtg-info.json" 2>/dev/null; then return 0; fi
+            local info="$DATOS/historial/mtg-info.json"
+            if grep -q "\"updated\": *\"$hoy\"" "$info" 2>/dev/null && grep -q '"files"' "$info"; then return 0; fi
             local tmp="$RUNNER_TEMP/mtgjson"; mkdir -p "$tmp"
             for f in AllPrices AllIdentifiers; do
               curl -fsSL --retry 3 -o "$tmp/$f.json.xz" "https://mtgjson.com/api/v5/$f.json.xz" \
