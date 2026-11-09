@@ -18,7 +18,7 @@ producto (nombre, número, rareza) sale de tcgcsv.com/tcgplayer/<categoría>/<ed
   <salida>/tcgcsv-products.json    qué carta es cada producto, por edición (para no pedir las 880 ediciones cada día)
 
 Cada serie guarda solo los días en que el precio cambió (3 % o más). La primera vez se arma el historial hacia atrás (un día por
-semana hasta hace 90 días y todos los días después); de a MAX_DAYS_PER_RUN días por corrida para no tardar horas. Las
+semana hasta hace 90 días y todos los días después); de a MAX_DAYS_PER_RUN días por corrida. Las
 corridas siguientes suman solo los días nuevos. Se guardan hasta 2 años.
 
 Uso: python3 games-history.py <carpeta de salida> <carpeta temporal>
@@ -39,7 +39,7 @@ API = 'https://tcgcsv.com'
 FIRST_ARCHIVE = datetime.date(2024, 2, 8)
 MAX_DAYS = 730
 DAILY_DAYS = 90
-MAX_DAYS_PER_RUN = int(os.environ.get('MAX_DAYS_PER_RUN', '60'))
+MAX_DAYS_PER_RUN = int(os.environ.get('MAX_DAYS_PER_RUN', '200'))
 GAMES = {'pokemon': 3, 'yugioh': 2}
 USER_AGENT = 'tcgstorehelper-price-history/1.0 (+https://tcgstorehelper.github.io)'
 PAUSE = 0.25

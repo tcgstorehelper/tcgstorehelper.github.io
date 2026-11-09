@@ -85,7 +85,7 @@ jobs:
           }
 
           # Pokémon y Yu-Gi-Oh!: TCGCSV publica un archivo por día (~20 h UTC). El script mira solo si hay días nuevos y,
-          # la primera vez, arma el historial hacia atrás de a 60 días por vuelta.
+          # la primera vez, arma el historial hacia atrás (~10 minutos).
           juegos() {
             mkdir -p "$DATOS/historial"
             python3 -u .github/scripts/games-history.py "$DATOS/historial" "$RUNNER_TEMP/tcgcsv" \
